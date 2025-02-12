@@ -1,14 +1,234 @@
-//TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
-// click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
-fun main() {
-    val name = "Kotlin"
-    //TIP Press <shortcut actionId="ShowIntentionActions"/> with your caret at the highlighted text
-    // to see how IntelliJ IDEA suggests fixing it.
-    println("Hello, " + name + "!")
+import java.io.*
 
-    for (i in 1..5) {
-        //TIP Press <shortcut actionId="Debug"/> to start debugging your code. We have set one <icon src="AllIcons.Debugger.Db_set_breakpoint"/> breakpoint
-        // for you, but you can always add more by pressing <shortcut actionId="ToggleLineBreakpoint"/>.
-        println("i = $i")
+object CaesarCipher {
+    // val defaultAlphabet = "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюя"
+    val defaultAlphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+
+    fun encrypt(text: String, key: Int, alphabet: String = defaultAlphabet): String {
+        val modKey = (key % alphabet.length + alphabet.length) % alphabet.length
+        return text.map { char ->
+            val index = alphabet.indexOf(char)
+            if (index != -1) {
+                alphabet[(index + modKey) % alphabet.length]
+            } else {
+                char
+            }
+        }.joinToString("")
+    }
+
+    fun decrypt(text: String, key: Int, alphabet: String = defaultAlphabet): String {
+        val modKey = (key % alphabet.length + alphabet.length) % alphabet.length
+        return text.map { char ->
+            val index = alphabet.indexOf(char)
+            if (index != -1) {
+                alphabet[(index - modKey + alphabet.length) % alphabet.length]
+            } else {
+                char
+            }
+        }.joinToString("")
+    }
+
+    fun bruteForceDecrypt(text: String, alphabet: String = defaultAlphabet): List<Pair<Int, String>> {
+        val results = mutableListOf<Pair<Int, String>>()
+        for (k in 0 until alphabet.length) {
+            results.add(Pair(k, decrypt(text, k, alphabet)))
+        }
+        return results
+    }
+}
+
+fun encryptFile(inputFile: File, outputFile: File, key: Int, alphabet: String = CaesarCipher.defaultAlphabet) {
+    if (!inputFile.exists()) {
+        println("Файл ${inputFile.absolutePath} не найден!")
+        return
+    }
+    try {
+        BufferedReader(FileReader(inputFile)).use { reader ->
+            BufferedWriter(FileWriter(outputFile)).use { writer ->
+                reader.lineSequence().forEach { line ->
+                    writer.write(CaesarCipher.encrypt(line, key, alphabet))
+                    writer.newLine()
+                }
+            }
+        }
+        println("Шифрование завершено. Результат записан в ${outputFile.absolutePath}")
+    } catch (e: Exception) {
+        println("Ошибка при обработке файла: ${e.message}")
+    }
+}
+
+fun decryptFile(inputFile: File, outputFile: File, key: Int, alphabet: String = CaesarCipher.defaultAlphabet) {
+    if (!inputFile.exists()) {
+        println("Файл ${inputFile.absolutePath} не найден!")
+        return
+    }
+    try {
+        BufferedReader(FileReader(inputFile)).use { reader ->
+            BufferedWriter(FileWriter(outputFile)).use { writer ->
+                reader.lineSequence().forEach { line ->
+                    writer.write(CaesarCipher.decrypt(line, key, alphabet))
+                    writer.newLine()
+                }
+            }
+        }
+        println("Расшифровка завершена. Результат записан в ${outputFile.absolutePath}")
+    } catch (e: Exception) {
+        println("Ошибка при обработке файла: ${e.message}")
+    }
+}
+
+fun bruteForceDecryptFile(inputFile: File, outputFile: File, alphabet: String = CaesarCipher.defaultAlphabet) {
+    if (!inputFile.exists()) {
+        println("Файл ${inputFile.absolutePath} не найден!")
+        return
+    }
+    try {
+        val text = inputFile.readText()
+        val results = CaesarCipher.bruteForceDecrypt(text, alphabet)
+        BufferedWriter(FileWriter(outputFile)).use { writer ->
+            results.forEach { (key, decryptedText) ->
+                writer.write("Ключ: $key")
+                writer.newLine()
+                writer.write(decryptedText)
+                writer.newLine()
+                writer.write("--------------------------------------------------")
+                writer.newLine()
+            }
+        }
+        println("Расшифровка методом brute force завершена. Результаты записаны в ${outputFile.absolutePath}")
+    } catch (e: Exception) {
+        println("Ошибка при обработке файла: ${e.message}")
+    }
+}
+/*
+
+
+
+                                                                                                           @@
+                                                                                                           @@     @@@@@@@@
+                                                                                                          @@@@@@@@@@@@@@
+                                                                                                         @@@@@@@@@@@@@@
+                                                                                                      @@@@@@@@@@@@@@@        @
+                                                                                                   @@@@@@@@@@@@@@@@@@@@@@@@@@@@             @@@@@@@@@@@@@@@@@@@@@
+                                                                                                 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@    @@@@@@@@@@@@@@...............@@@@
+                                                                                               @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@   @@@@@@@@.........................@@@
+                                                                                             @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@    @@@@@@............@..............@@@  @@@  @@@@
+                                                                                            @@@@@@@@@@@@@@@@@@@@@@@@@@@@    @@@@@@@@......@.@@...@@...........@@@@   @@@@ @@@@
+                                                                                          @@@@@@@@@@@@@@@@@@@@@@@@@@@     @@@@@@@@...@...@@..@@@@@.........@@@@@     @@.@@@.@@@@@
+                                                                                         @@@@@@@@@@@@@@@@@@@@@@@@        @@@@@@@@@....@@@@@.............@@@@@@       @@.@@@.@@@@@@
+                                                                                         @@@@@@@@@@@@@@@@@@@@@@@@       @@@.@@@@....................@@@@@@@     @@@@@@@@.@..@..@@
+                                                                                        @@@@@@@@@@@@@@@@@@@@@@@        @@@@@@@@@........@.......@@@@@@@        @@@............@@
+                                                                                        @@@@@@@@@@@@@@@@@@@@@@@       @@@..@@@.......@@@.........@@@           @@@@@@@@@@....@@@
+                                                                                       @@@@@@@@@@@@@@@@  @@@@@        @@.@@@@@@.....@@@@@@@@@@@@@@@@@       @@@@@@@@@  @@...@@@
+                                                                                       @@@@@@@@@@@@@@@   @@@@@       @@@.@@@@@......@@@@@    @@@@@@@   @@@@@@@@@@@@@@ @@@..@@@
+                                                                                        @@@@@@@@@@@@     @@@@@       @@@@@@@@@......@@.@@@@      @@@@@@@@@@@@@@@@@@@@@@@..@@@
+                                                                                         @@@@@@@@@       @@@@@      @@@@@@@@@............@@@@     @@@@@@@@@@@@@@@@@@@@....@@@
+                                                                                            @@           @@@@@      @@@@@@@................@@@@@      @@@@@@@@@@@@@@@.....@@
+                                                                                                         @@@@@@@@@  @@@@@@@...................@@@@@@@@@@         @@@@@@...@@
+                                                                                                       @@@.@@...@@@  @@@@..........................@@@@@           @@@@..@@
+                                                                                                       @@@@@.@@.@@@   @@@.............................@@@           @@...@@
+                                                                                                       @@@@@@@@.@@@    @@@...........................@@@@          @@@..@@@
+                                                                                                       @@@@@@@..@@@     @@@.........................@@@@@@   @@@@@@@@...@@@
+                                                                                                       @@@@@@@@.@@       @@@......................@@@@@@@@@@@@@@@.......@@@
+                                                                                                       @@@@@@@...@@       @@@@@@@................@@@@@@@@@............@@@@
+                                                                                                         @@@@@....@@    @@@@...................@@@@@@@@@@@@....@@@@@@@@@@
+                                                                                                          @@@@@....@@ @@@@...................@@@@@@@@@@@@@@@@@@@@@
+                                                                                                          @@@@@@....@@@@@....@@............@@@@@@@@@@@@@@@@@
+                                                                                                          @@@@ @@@...@@....@@@...........@@@@@@@@@@@@@@@@@@@
+                                                                                                          @@@@  @@@.......@@@..........@@@@@@@@@@@@@@@@@@@@@@
+                                                                                                          @@@@   @@@....@@@@@......@@@@@@@@@@@@@@@@@@@@@@@@@@
+                                                                                                          @@@@    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+                                                                                                          @@@@     @@@@   @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+                                                                                                          @@@@            @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+                                                                                                          @@@@            @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+                                                                                                          @@@@            @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+                                                                                                         @@@@@            @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+                                                                                                         @@@@@            @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+                                                                                                         @@@@@            @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+                                                                                                         @@@@@            @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+                                                                                                         @@@@@            @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+                                                                                                         @@@@@            @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+                                                                                                         @@@@@            @@@@@@@@@@@@@@@@@@@@@@@@@@@@
+                                                                                                         @@@@@                    @@@..@@...@@@
+                                                                                                         @@@@@                    @@@..@@..@@@
+                                                                                                         @@@@@                    @@@..@@..@@@
+                                                                                                         @@@@@                     @@..@@..@@@
+                                                                                                         @@@@@                  @@@@@@.@@@@@@@@@          @@@
+                                                                                                         @@@@@              @@@@@@@@.@@@@@@.@@@@@@@@@    @@@@@
+                                                                                                         @@@@@          @@@@@@@@.@@@...@@...@@@..@@@@@@@
+                                                                                                         @@@@@        @@@@@@.@@@..@@@..@@..@@@..@@@.@@@@@@
+                                                                                                         @@@@@     @@@@..@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@..@@@@
+                                                                                                          @@@@     @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+
+
+     @@@@@@@@@@@@           @@                           @@@                          @@@@@@@@@@@@@                                                                                       @@@@@@@@@@@@@@@@        @@
+      @@@@@@@@@@@         @@@@@@                    @@@@@@@@                       @@@@@@@@@@@@@@@@                                                                                       @@@@@@@@@@@@@@@@@@    @@@@@@
+        @@@@@@            @@@@@@    @@@@      @@@    @@@@@@@                      @@@@@@     @@@@@                                                                                           @@@@@@    @@@@@@   @@@@@@
+         @@@@@              @@@    @@@@@     @@@@      @@@@@                     @@@@@@       @@@                                                                                            @@@@@@     @@@@@@    @@@
+         @@@@@              @@@@  @@@@@@@@@@@@@@@@@@@  @@@@@      @@@@@@@       @@@@@@        @@@  @@@@@@@@@@        @@@@@@      @@@@@@@@@   @@@@@@@@@@       @@@@ @@@@@@  @@@@@@@@@ @@@@    @@@@@@     @@@@@@    @@@@   @@@@@@@@@@@@@@@@@@@@@@@@@@@ @@@@@@@@@@
+         @@@@@         @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ @@@@@    @@@@@@@@@@@     @@@@@@             @@@@@@@@@@@@   @@@@@@@@@@@  @@@@@@@@@@@   @@@@@@@@@@@  @@@@@@@@@@@@@@@@@@@@@@@@@@ @@@@    @@@@@@     @@@@@@@@@@@@@@   @@@@@@@@@@@@@@@@@@@@@@@@@@@ @@@@@@@@@@@@
+         @@@@@           @@@@@@@  @@@@@@    @@@@@      @@@@@   @@@@@  @@@@@     @@@@@@             @@@@   @@@@@   @@@@   @@@@@ @@@@   @@@@   @@@   @@@@@@  @@@@@@@@@@@@@@@@@@   @@@@         @@@@@@    @@@@@@  @@@@@@@  @@@@@  @@@@@@ @@@@   @@@@@@  @@@@   @@@@@
+         @@@@@             @@@@@  @@@@@@    @@@@@      @@@@@  @@@@@    @@@@@   @@@@@@@             @@@    @@@@@  @@@@@   @@@@@@@@@@@   @@@  @@@@    @@@@@    @@@@@@     @@@@@@   @@@         @@@@@@@@@@@@@@@    @@@@@@  @@@@   @@@@@  @@@   @@@@@@   @@@    @@@@@@
+         @@@@@             @@@@@  @@@@@@    @@@@@       @@@@ @@@@@@@@@@@@@@@    @@@@@@                 @@@@@@@@ @@@@@@@@@@@@@@@@@@@@@@@@         @@@@@@@@    @@@@@      @@@@@@@@@            @@@@@@@@@@@@@      @@@@@@       @@@@@@        @@@@@@        @@@@@@@@@
+         @@@@@         @   @@@@@  @@@@@@    @@@@@       @@@@ @@@@@@@@@@@@@@     @@@@@@          @   @@@@@@@@@@@ @@@@@@@@@@@@@@  @@@@@@@@@@    @@@@@@@@@@@    @@@@@        @@@@@@@@@@         @@@@@@             @@@@@@      @@@@@@        @@@@@@      @@@@@@@@@@@@
+         @@@@@       @@@@  @@@@@  @@@@@@    @@@@@       @@@@ @@@@@@             @@@@@@@       @@@@@@@@@@  @@@@@ @@@@@@         @@  @@@@@@@@ @@@@@@  @@@@@    @@@@@      @@  @@@@@@@@@        @@@@@@             @@@@@@     @@@@@@   @@   @@@@@   @@ @@@@@@  @@@@@@
+         @@@@@      @@@@   @@@@@  @@@@@@    @@@@@       @@@@  @@@@@@             @@@@@@      @@@@ @@@@@   @@@@@ @@@@@@@       @@@@    @@@@@@@@@@@   @@@@@    @@@@@     @@@@    @@@@@@        @@@@@@             @@@@@@    @@@@@@  @@@@  @@@@@   @@@@@@@@@   @@@@@@
+        @@@@@@@@@@@@@@@@   @@@@@  @@@@@@@@@@@@@@@@@@@  @@@@@   @@@@@@@@@@@@       @@@@@@@  @@@@@@ @@@@@@  @@@@@@ @@@@@@@@@@@@@ @@@@   @@@@@@@@@@@   @@@@@@   @@@@@      @@@@    @@@@@        @@@@@@@            @@@@@@   @@@@@@ @@@@@@@@@@@@  @@@@@@@@@@@   @@@@@@
+     @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@        @@@@@@@@@@@@@  @@@@@@@@@@@@@@@@@@@@@@@@@@@  @@@@@@@@@@@  @@@@@@@@@@@@@@@@@@@@@@@@@   @@@@@@@@@@@@      @@@@@@@@@@@@        @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ @@@@@@@@@@@@@@@@
+      @@@@@@@@@@@@@@@@@ @@@@@@@@@@  @@@@@@    @@@@@  @@@@@@@@@@   @@@@@@@             @@@@@@@@@@    @@@@@  @@@@@@   @@@@@@@    @@ @@@@@@     @@@@@@ @@@@@@@@@@@@@@@@@   @@@@@@@@@@         @@@@@@@@@@@        @@@@@@@@@@ @@@@@@@@@@@@ @@@@@@@@@@@@@   @@@@@  @@@@@@
+
+
+
+
+* */
+fun main() {
+    println("=== Программа для работы с шифром Цезаря ===")
+    println("Выберите режим работы:")
+    println("1. Шифровка текста")
+    println("2. Расшифровка текста с использованием ключа")
+    println("3. Расшифровка методом brute force (перебор всех вариантов)")
+    print("Ваш выбор: ")
+
+    when (readLine()?.trim()) {
+        "1" -> {
+            print("Введите путь к файлу с исходным текстом: ")
+            val inputPath = readLine()?.trim() ?: ""
+            print("Введите путь для сохранения зашифрованного текста: ")
+            val outputPath = readLine()?.trim() ?: ""
+            print("Введите ключ шифрования (целое число): ")
+            val keyInput = readLine()?.trim()
+            val key = keyInput?.toIntOrNull()
+            if (key == null) {
+                println("Неверно введен ключ!")
+                return
+            }
+            encryptFile(File(inputPath), File(outputPath), key)
+        }
+
+        "2" -> {
+            print("Введите путь к файлу с зашифрованным текстом: ")
+            val inputPath = readLine()?.trim() ?: ""
+            print("Введите путь для сохранения расшифрованного текста: ")
+            val outputPath = readLine()?.trim() ?: ""
+            print("Введите ключ шифрования (целое число): ")
+            val keyInput = readLine()?.trim()
+            val key = keyInput?.toIntOrNull()
+            if (key == null) {
+                println("Неверно введен ключ!")
+                return
+            }
+            decryptFile(File(inputPath), File(outputPath), key)
+        }
+
+        "3" -> {
+            print("Введите путь к файлу с зашифрованным текстом: ")
+            val inputPath = readlnOrNull()?.trim() ?: ""
+            print("Введите путь для сохранения вариантов расшифровки: ")
+            val outputPath = readlnOrNull()?.trim() ?: ""
+            bruteForceDecryptFile(File(inputPath), File(outputPath))
+        }
+
+        else -> main()
     }
 }
